@@ -1,0 +1,9 @@
+[mysqldump]
+user=root
+password=my_tcrd_passwd
+host=my_tcrd_hostname_or_ip
+
+[client]
+user=root
+password=my_tcrd_passwd
+host=my_tcrd_hostname_or_ip
