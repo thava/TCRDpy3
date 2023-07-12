@@ -3,12 +3,14 @@
 """Load protein data from UniProt.org into TCRD via the web.
 
 Usage:
-    load-UniProt.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-UniProt.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--pwfile=<str>] [--dbuser=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-UniProt.py -? | --help
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
   -n --dbname DBNAME   : MySQL database name [default: tcrdev]
+  -u --dbuser DBUSER   : MySQL login user name [default: root]
+  -p --pwfile PWFILE   : MySQL password File path [default: ./tcrd_pass]
   -l --logfile LOGF    : set log file name
   -v --loglevel LOGL   : set logging level [default: 30]
                          50: CRITICAL
@@ -123,11 +125,17 @@ def load_human(args, dba, dataset_id, eco_map, logger, logfile):
     slmf.update_progress(ct/up_ct)
     entry = root.entry[i]
     logger.info("Processing entry {}".format(entry.accession))
-    tinit = entry2tinit(entry, dataset_id, eco_map)
+    try:
+        tinit = entry2tinit(entry, dataset_id, eco_map)
+    except KeyError as e:
+        tinit = ''
+
     if not tinit:
       xml_err_ct += 1
       logger.error("XML Error for {}".format(entry.accession))
       continue
+    # import json
+    # print('Insert Tinit:', json.dumps(tinit))
     tid = dba.ins_target(tinit)
     if not tid:
       dba_err_ct += 1
@@ -197,7 +205,7 @@ def get_entry_by_accession(root, acc):
     if entry.accession == acc:
       return entry
   return None
-                                              
+
 def entry2tinit(entry, dataset_id, e2e):
   """
   Convert an entry element of type lxml.objectify.ObjectifiedElement parsed from a UniProt XML entry and return a dictionary suitable for passing to TCRD.DBAdaptor.ins_target().
@@ -287,8 +295,13 @@ def entry2tinit(entry, dataset_id, e2e):
           goeco = str(el.attrib['value'])
         elif el.attrib['type'] == 'project':
           assigned_by = str(el.attrib['value'])
+      if goeco in e2e:
+          evidence = e2e[goeco]
+      else:
+          evidence = ''
+          print('Warning! Ignored evidence: goeco not in e2e! goeco: ', goeco)
       goas.append( {'go_id': str(dbr.attrib['id']), 'go_term': name,
-                    'goeco': goeco, 'evidence': e2e[goeco], 'assigned_by': assigned_by} )
+                    'goeco': goeco, 'evidence': evidence, 'assigned_by': assigned_by} )
     elif dbr.attrib['type'] == 'Ensembl':
       xrefs.append( {'xtype': 'Ensembl', 'dataset_id': dataset_id, 'value': str(dbr.attrib['id'])} )
       for el in dbr.findall(NS+'property'):
@@ -398,6 +411,8 @@ if __name__ == '__main__':
   start_time = time.time()
 
   args = docopt(__doc__, version=__version__)
+  # print('Args: ', args)
+
   if args['--debug']:
     print(f"\n[*DEBUG*] ARGS:\nargs\n")
   if args['--logfile']:
@@ -414,7 +429,14 @@ if __name__ == '__main__':
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
+  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 
+                'dbuser': args['--dbuser'], 'pwfile': args['--pwfile'],
+                'logger_name': __name__}
+
+  # dba_params.pwfile = '/tmp/tcrd_pass';
+  # dba_params.dbuser = 'root';
+  # dba_params.dbname = 'tcrdev';
+
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
   logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
@@ -427,7 +449,7 @@ if __name__ == '__main__':
   # UniProt uses ECO IDs in GOAs, not GO evidence codes, so get a mapping of
   # ECO IDs to GO evidence codes
   eco_map = mk_eco_map(args)
-  
+
   # Human proteins
   # Dataset and Provenance
   # This has to be done first because the dataset id is needed for xrefs and aliases
