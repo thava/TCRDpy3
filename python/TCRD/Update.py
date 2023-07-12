@@ -72,22 +72,14 @@ class UpdateMethodsMixin:
         row_ct = curs.rowcount
         self._conn.commit()
       except Error as e:
-<<<<<<< HEAD
         self._logger.error(f"MySQL Error in upd_tdls_null(): {e}")
-=======
-        self._logger.error(f"MySQL Error in set_tdls_null(): {e}")
->>>>>>> 7a2d909d09fb375558f5724be512a09f5e4e59b7
         self._conn.rollback()
         return False
     return row_ct
 
   def upd_pmstdlis_zero(self):
     '''
-<<<<<<< HEAD
     Function  : Set all JensenLab PubMed Score' tdl_info values to 0
-=======
-    Function  : Set all target.tdl values to NULL
->>>>>>> 7a2d909d09fb375558f5724be512a09f5e4e59b7
     Arguments : N/A
     Returns   : Integer count of rows updated
     '''
@@ -99,16 +91,11 @@ class UpdateMethodsMixin:
         row_ct = curs.rowcount
         self._conn.commit()
       except Error as e:
-<<<<<<< HEAD
         self._logger.error(f"MySQL Error in upd_pmstdlis_zero(): {e}")
-=======
-        self._logger.error(f"MySQL Error in set_tdls_null(): {e}")
->>>>>>> 7a2d909d09fb375558f5724be512a09f5e4e59b7
         self._conn.rollback()
         return False
     return row_ct
 
-<<<<<<< HEAD
   def upd_pms_tdlinfo(self, protein_id, number_value):
     '''
     Function  : Update a 'JensenLab PubMed Score' tdl_info value for a single protein_id
@@ -135,6 +122,3 @@ class UpdateMethodsMixin:
         return False
     return True
 
-=======
-  
->>>>>>> 7a2d909d09fb375558f5724be512a09f5e4e59b7
