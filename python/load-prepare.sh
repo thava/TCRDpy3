@@ -31,10 +31,10 @@ mysqldump --defaults-file=./tcrd.my.cnf --single-transaction --no-create-db --no
 #
 init_save_tcrdev_db(){
 
-  mysql --defaults-file=/.tcrd.my.cnf  <<<EOF
+  mysql --defaults-file=./tcrd.my.cnf  <<EOF
 
   create database tcrdev;
-  use tcrd7
+  use tcrdev
   source create-TCRDev.sql
   source types_tcrdev.sql
   -- SHOW TABLE STATUS FROM `tcrdev`;
@@ -42,10 +42,23 @@ init_save_tcrdev_db(){
 
 EOF
 
-mysqldump --defaults-file=./tcrd.my.cnf --single-transaction tcrdev > create-TCRDEV-base.sql
+mysqldump --defaults-file=./tcrd.my.cnf --single-transaction tcrdev > create-TCRDev-base.sql
 
 }
 
+#
+# Reload the basic minimal TCRD database without data.
+#
+reload_tcrdev_db(){
+
+  mysql --defaults-file=./tcrd.my.cnf  <<EOF
+    drop database tcrdev;
+    create database tcrdev;
+    use tcrdev;
+    source create-TCRDev-base.sql
+EOF
+
+}
 
 tcrd_prepare(){
 create_schema_only
@@ -68,7 +81,7 @@ load_uniprot(){
   mkdir -p ../data/EvidenceOntology/
   mkdir -p ../data/UniProt/
 
-  python ./load-UniProt.py --dbhost=$TCRD_HOST --dbname tcrdev --pwfile=./tcrd_pass --dbuser=$TCRD_USER  --loglevel 20
+  python ./load-UniProt.py --dbhost=$TCRD_HOST --dbname tcrdev --pwfile=./tcrd_pass --dbuser=$TCRD_USER  --loglevel 20 --skip_download 1
 
 }
 

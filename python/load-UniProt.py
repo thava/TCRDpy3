@@ -3,7 +3,7 @@
 """Load protein data from UniProt.org into TCRD via the web.
 
 Usage:
-    load-UniProt.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--pwfile=<str>] [--dbuser=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-UniProt.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--pwfile=<str>] [--dbuser=<str>] [--logfile=<file>] [--loglevel=<int>] [--skip_download=<int>]
     load-UniProt.py -? | --help
 
 Options:
@@ -19,6 +19,9 @@ Options:
                          20: INFO
                          10: DEBUG
                           0: NOTSET
+  -s --skip_download SKIP_DL : Skip downloading data files. [default: 0]
+                         0: False
+                         1: True
   -q --quiet           : set output verbosity to minimal level
   -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
@@ -43,7 +46,8 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 PROGRAM = os.path.basename(sys.argv[0])
-TCRD_VER = '7' ## !!! CHECK THIS IS CORRECT !!! ##
+# TCRD_VER = '7' ## !!! CHECK THIS IS CORRECT !!! ##
+TCRD_VER = 'Dev' ## !!! CHECK THIS IS CORRECT !!! ##
 LOGDIR = f"../log/tcrd{TCRD_VER}logs/"
 LOGFILE = f"{LOGDIR}/{PROGRAM}.log"
 
@@ -420,6 +424,7 @@ if __name__ == '__main__':
   else:
     logfile = LOGFILE
   loglevel = int(args['--loglevel'])
+  skip_download = int(args['--skip_download'])
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
   if not args['--debug']:
@@ -443,8 +448,9 @@ if __name__ == '__main__':
   if not args['--quiet']:
     print("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
 
-  download_eco(args)
-  download_uniprots(args)
+  if not skip_download:
+      download_eco(args)
+      download_uniprots(args)
 
   # UniProt uses ECO IDs in GOAs, not GO evidence codes, so get a mapping of
   # ECO IDs to GO evidence codes
