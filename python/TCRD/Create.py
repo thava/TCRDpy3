@@ -473,7 +473,13 @@ class CreateMethodsMixin:
   def ins_disease(self, init, commit=True):
     if 'dtype' in init and 'name' in init:
       cols = ['dtype', 'name']
-      params = [init['dtype'], init['name']]
+      # Replace the disease type uniprot to 'UniProt Disease' in std form.
+      dtype = init['dtype']
+      if not dtype:
+          dtype = ''
+      if (dtype.lower() == 'uniprot'):
+          dtype = 'UniProt Disease'
+      params = [dtype, init['name']]
     else:
       self.warning("Invalid parameters sent to ins_disease(): ", init)
       return False
